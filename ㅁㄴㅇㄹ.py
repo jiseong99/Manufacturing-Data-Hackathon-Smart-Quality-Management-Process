@@ -6,7 +6,7 @@ df = pd.read_csv("qlearning.csv", sep=";")
 for env in ["cafeWorld", "bookWorld"]:
     sub = df[df["Env"] == env]
     plt.figure()
-    plt.plot(sub["Episode #"], sub["Cumulative Reward"])
+    plt.plot(sub["Episode #"].values, sub["Cumulative Reward"].values)
     plt.xlabel("Episode")
     plt.ylabel("Cumulative Reward")
     plt.title(env)
