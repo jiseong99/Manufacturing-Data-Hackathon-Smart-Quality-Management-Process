@@ -1,75 +1,99 @@
-# Smart Quality Management Process for Injection Molding (사출성형 공정)
+# Smart Quality Management Process for Injection Molding
 
-A smart quality management pipeline for injection molding that combines **quality-control methodology** (control charts, attribute sampling) with **AI-based inspection**.  
-This project proposes a practical approach to optimize **yield (산출율)** and **cost** by introducing **pseudo labeling** for unlabeled process data and training predictive models optimized for **high recall**.
+A smart quality management pipeline for injection molding that integrates
+traditional quality-control methodologies (control charts, attribute sampling)
+with machine learning–based inspection to optimize yield and cost under real-world manufacturing constraints.
+
+---
+
+## TL;DR
+- Built an end-to-end smart quality management pipeline for injection molding
+- Solved the absence of quality labels using control-chart-based pseudo labeling
+- Trained recall-optimized predictive models under extreme class imbalance
+- Improved yield from **73% → 79%** while reducing error rate from **16% → 1.5%**
 
 ---
 
 ## Overview
+Injection molding is a mass-production manufacturing process, but real-world factories often face the following challenges:
 
-Injection molding is a mass-production manufacturing method, but it is difficult to **monitor machine/process states in real time** during production, and many factories lack a direct dependent variable (quality label), making data-infrastructure construction expensive and slow.  
-To address this, we propose a process that:
+- No real-time monitoring of machine/process states
+- No explicit dependent variable (quality labels)
+- High cost and latency in building labeled data infrastructure
 
-- Creates **evidence-based labels** from process signals (Pseudo Labeling)
-- Trains an **AI model for pre-inspection (AI 기반 사전 전수 검사)**
-- Integrates **sampling inspection policy** (ANSI/ASQ Z1.4-based attribute sampling) to reduce risk and cost
+To address these constraints, this project proposes a practical, deployable pipeline that:
+
+- Generates evidence-based labels from process signals (pseudo labeling)
+- Trains AI models for pre-inspection (full population screening)
+- Integrates statistical sampling inspection (ANSI/ASQ Z1.4) to reduce risk and cost
 
 ---
 
 ## Key Contributions
 
-1. **Optimization targets aligned with manufacturing reality**
-   - Uses two practical KPIs: **Yield (산출율)** and **Cost (비용)**
+### 1. Optimization Targets Aligned with Manufacturing Reality
+- Uses practical KPIs instead of offline accuracy:
+  - **Yield** (production output rate)
+  - **Cost** (scrap and inspection cost)
 
-2. **New smart quality management process**
-   - Combines traditional QC methods and ML models into one end-to-end workflow
+### 2. End-to-End Smart Quality Management Pipeline
+- Integrates traditional QC methods and ML models into a single workflow
+- Designed for deployment under industrial constraints
 
-3. **Pseudo Labeling for manufacturing data infrastructure**
-   - Generates Normal/Abnormal labels from unlabeled process-only datasets
+### 3. Pseudo Labeling for Manufacturing Data Infrastructure
+- Generates **Normal / Abnormal** labels from unlabeled, process-only datasets
+- Enables supervised learning without costly manual inspection labels
 
 ---
 
 ## Data
 
-- Dataset: Injection Molding Predictive Maintenance AI dataset (CSV)
-- Size: **26,796,510 rows** total (about **1,030,635 rows × 26 columns**)
-- Features: anonymized process signals (temperature, pressure, time, speed, etc.)
-- Limitation: **No dependent variable (no quality label)**
+- **Dataset**: Injection Molding Predictive Maintenance AI dataset (CSV)
+- **Scale**: 26,796,510 rows total  
+  (≈ 1,030,635 samples × 26 features)
+- **Features**: Anonymized process signals  
+  (temperature, pressure, time, speed, etc.)
+- **Limitation**: No dependent variable (no quality label)
 
 ---
 
 ## Proposed Pipeline
 
-### 1) Pseudo Labeling (Label Generation)
+### 1. Pseudo Labeling (Label Generation)
 
-We label the process as Normal/Abnormal using a stricter, control-chart-based approach:
+Labels are generated using a strict, control-chart-driven approach:
 
-- Compute **moving range (Rm) control chart** for controllable key variables
-- Reduce 23 independent variables into a representative variable via **PCA**
-- Apply **weighted sum** using correlation with representative variables
-- Produce final Normal/Abnormal labels
+- Compute moving range (Rm) control charts for key controllable variables
+- Reduce 23 independent variables into a representative variable via PCA
+- Apply weighted aggregation based on correlation with representative variables
+- Produce final **Normal / Abnormal** labels
 
-Focused controllable variables directly related to defects:
-- Crack: `Barrel_Temp_Z1~Z4 (℃)`
-- Jetting: `Plasticizing_Screw_Velocity (rpm)`
-- Flash/Burr: `Cooling_Time (sec)`, `VP_Press (MPa)`, `Back_Flow (MPa)`
+Focused controllable variables directly linked to defect mechanisms:
 
-### 2) Predictive Model (AI-based Pre-Inspection)
+- **Crack**: Barrel_Temp_Z1 ~ Z4 (°C)
+- **Jetting**: Plasticizing_Screw_Velocity (rpm)
+- **Flash / Burr**: Cooling_Time (sec), VP_Press (MPa), Back_Flow (MPa)
 
-Preprocessing:
-- Drop meaningless column(s) (e.g., `No_Shot`)
-- `Label Encoding` for nominal identifiers (e.g., Lot)
-- `MinMaxScaler` due to different units/ranges across columns
+---
 
-Modeling strategy:
-- AutoML with **PyCaret** to benchmark multiple algorithms quickly
-- Evaluation metric: **Recall maximization** (minimize Type II risk, β)
-- Class imbalance handled via **Under/Over Sampling**
-- Model improvement:
-  - `GridSearch` parameter tuning
-  - **Soft Voting Ensemble**
+### 2. Predictive Model (AI-based Pre-Inspection)
 
-Class imbalance (example from slides):
+#### Preprocessing
+- Drop meaningless columns (e.g., `No_Shot`)
+- Label encoding for nominal identifiers (e.g., `Lot`)
+- MinMax scaling to handle heterogeneous feature ranges
+
+#### Modeling Strategy
+- AutoML benchmarking using **PyCaret**
+- Primary evaluation metric: **Recall**
+  - Minimize Type II error (β-risk)
+- Handle severe class imbalance via under/over sampling
+
+#### Model Improvement
+- GridSearch-based hyperparameter tuning
+- Soft voting ensemble
+
+Class distribution example:
 - Normal: 1,002,137
 - Abnormal: 28,277
 
@@ -77,45 +101,67 @@ Class imbalance (example from slides):
 
 ## Experiments & Results
 
-### A) Label Experiment (Existing labeling vs. Pseudo labeling)
+### A. Labeling Experiment  
+(Existing heuristic labeling vs. proposed pseudo labeling)
 
-- More strict and evidence-based labeling becomes possible (control-chart driven)
-- Pass decisions ~**91% consistent**
-- Abnormal lots increased by **74**
-- Estimated defect rate becomes **~2.1%**, similar to realistic industrial requirements
+- Control-chart-driven labeling is stricter and more evidence-based
+- Pass decisions ≈ **91% consistent**
+- Abnormal lots increased by **+74**
+- Estimated defect rate ≈ **2.1%**, aligned with realistic industrial requirements
 
-### B) Attribute Sampling Experiment (Process comparison)
+---
 
-Sampling policy:
-- Based on **ANSI/ASQ Z1.4**
-- Inspection level: **General II (GⅡ)** chosen (non-destructive inspection, broader coverage at reasonable cost)
+### B. Attribute Sampling Experiment  
+(Process comparison)
 
-Outcome:
-- **Yield improved**: 73% → **79%**
-- **Error rate (Type 1&2)** reduced: 16% → **1.5%**
+- Sampling policy based on **ANSI/ASQ Z1.4**
+- Inspection level: **General II (GII)**
+  - Non-destructive inspection
+  - Balanced coverage and cost
+
+**Outcome**
+- Yield improved: **73% → 79%**
+- Error rate (Type I & II): **16% → 1.5%**
 
 ---
 
 ## Conclusion
 
-By integrating **QC methods + AI**, this approach:
-- Improves credibility and practicality of the solution
-- Addresses the “no real-time monitoring” limitation of injection molding
-- Contributes to future development of real-time anomaly handling systems in manufacturing analytics
+By integrating quality-control theory with machine learning, this approach:
+
+- Improves credibility and deployability of AI solutions in manufacturing
+- Addresses the absence of real-time monitoring and labeled data
+- Provides a foundation for future real-time anomaly handling systems
+
+---
+
+## Why This Project Matters
+This project emphasizes applying machine learning under real-world manufacturing constraints:
+
+- No ground-truth labels
+- Extreme class imbalance
+- High cost of false negatives
+- Operational KPIs prioritized over offline accuracy
+
+Rather than optimizing theoretical performance, the pipeline focuses on
+**robustness, interpretability, and operational impact**, making it well-suited
+for deployment-oriented ML and MLOps roles.
 
 ---
 
 ## Team
-
 IESC  
-- 강민규
-- 김우석
-- 김한성
-- 한지성
+- Min-Gyu Kang  
+- Woo-Seok Kim  
+- Han-Seong Kim  
+- **Ji-Seong Han**
 
 ---
 
 ## Notes
+This repository is based on the project presentation:
 
-This repository is based on the project presentation:  
-**“사출성형 공정을 위한 스마트 품질관리 프로세스”**.
+**“Smart Quality Management Process for Injection Molding”**  
+(original presentation materials are in Korean)
+
+An English summary of the methodology and results is provided in this README.
